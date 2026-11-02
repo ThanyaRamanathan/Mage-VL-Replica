@@ -1,0 +1,102 @@
+#!/bin/sh
+#PBS -N cataract101_aggregate
+#PBS -l select=1:ncpus=1:mem=4gb
+#PBS -l walltime=00:15:00
+#PBS -j oe
+#PBS -o logs/aggregate.$PBS_JOBID.txt
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+
+module load miniforge3
+conda activate surgical
+
+mkdir -p reports
+
+python - <<'PY'
+import csv
+import json
+import statistics
+from collections import defaultdict
+from pathlib import Path
+
+root = Path("cataract101_runs")
+records = []
+expected = set()
+
+for seed in (17, 29, 43):
+    for selector in ("uniform", "codec", "clinical"):
+        for budget in (1568, 3136, 6272):
+            expected.add((selector, budget, seed))
+            path = root / f"{selector}_budget{budget}_seed{seed}" / "results.json"
+
+            if not path.exists():
+                raise SystemExit(f"Missing result: {path}")
+
+            result = json.loads(path.read_text())
+            key = (
+                result["selector"],
+                int(result["visual_tokens"]),
+                int(result["seed"]),
+            )
+
+            if key != (selector, budget, seed):
+                raise SystemExit(f"Metadata mismatch in {path}: {key}")
+
+            records.append(result)
+
+if len(records) != 27:
+    raise SystemExit(f"Expected 27 results, found {len(records)}")
+
+groups = defaultdict(list)
+for result in records:
+    groups[(result["selector"], result["visual_tokens"])].append(result)
+
+rows = []
+for (selector, budget), values in sorted(
+    groups.items(), key=lambda item: (item[0][1], item[0][0])
+):
+    row = {
+        "selector": selector,
+        "visual_tokens": budget,
+        "seeds": len(values),
+    }
+
+    for metric in (
+        "accuracy",
+        "macro_f1",
+        "transition_window_accuracy",
+        "latency_ms",
+    ):
+        numbers = [float(value[metric]) for value in values]
+        row[f"{metric}_mean"] = statistics.mean(numbers)
+        row[f"{metric}_std"] = statistics.stdev(numbers)
+
+    rows.append(row)
+
+output = Path("reports/cataract101_summary.csv")
+with output.open("w", newline="") as handle:
+    writer = csv.DictWriter(handle, fieldnames=rows[0].keys())
+    writer.writeheader()
+    writer.writerows(rows)
+
+print("\nCataract-101 results: mean ± sample SD across three seeds\n")
+print(
+    f"{'selector':10s} {'tokens':>7s} {'accuracy':>17s} "
+    f"{'macro-F1':>17s} {'transition':>17s} {'latency ms':>17s}"
+)
+
+for row in rows:
+    print(
+        f"{row['selector']:10s} "
+        f"{row['visual_tokens']:7d} "
+        f"{row['accuracy_mean']:.4f} ± {row['accuracy_std']:.4f} "
+        f"{row['macro_f1_mean']:.4f} ± {row['macro_f1_std']:.4f} "
+        f"{row['transition_window_accuracy_mean']:.4f} ± "
+        f"{row['transition_window_accuracy_std']:.4f} "
+        f"{row['latency_ms_mean']:.2f} ± {row['latency_ms_std']:.2f}"
+    )
+
+print(f"\nSaved {output}")
+PY

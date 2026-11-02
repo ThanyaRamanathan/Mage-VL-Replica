@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "surgical-codec-tokens"
+version = "0.2.0"
+description = "Matched-budget codec-native patch selection for Cataract-101 surgical video"
+requires-python = ">=3.10"
+dependencies = [
+  "av>=12", "numpy>=1.26", "pandas>=2.1", "pillow>=10", "pyyaml>=6",
+  "torch>=2.2", "torchvision>=0.17", "timm>=1.0", "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+tfrecord = ["tensorflow-cpu>=2.16"]
+
+[project.scripts]
+surgical-tokens = "surgical_tokens.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100

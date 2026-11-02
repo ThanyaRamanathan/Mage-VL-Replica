@@ -1,0 +1,44 @@
+#!/bin/sh
+#PBS -N surgical_tokens
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o surgical_tokens.$PBS_JOBID.txt
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load cuda
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+
+# Set these with qsub -v, for example:
+# qsub -v SELECTOR=codec,BUDGET=3136,MANIFEST=/scratch/cataract101.csv,CODEC_SCORES=/scratch/codec
+MANIFEST="${MANIFEST:-data/cataract101.csv}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-runs/cataract101}"
+SELECTOR="${SELECTOR:-uniform}"
+BUDGET="${BUDGET:-1568}"
+CONFIG="${CONFIG:-configs/${SELECTOR}.yaml}"
+WORKERS="${WORKERS:-4}"
+EPOCHS="${EPOCHS:-}"
+SEED="${SEED:-17}"
+CODEC_SCORES="${CODEC_SCORES:-}"
+CLINICAL_SCORES="${CLINICAL_SCORES:-}"
+MAX_TRAIN_BATCHES="${MAX_TRAIN_BATCHES:-}"
+MAX_EVAL_BATCHES="${MAX_EVAL_BATCHES:-}"
+
+export PYTHONPATH="${PBS_O_WORKDIR}/src:${PYTHONPATH:-}"
+python -m surgical_tokens.cli validate-config "$CONFIG" --manifest "$MANIFEST"
+
+RUN_DIR="${OUTPUT_ROOT}/${SELECTOR}_budget${BUDGET}_seed${SEED}"
+mkdir -p "$RUN_DIR"
+
+ARGS="--config $CONFIG --manifest $MANIFEST --selector $SELECTOR --budget $BUDGET --output $RUN_DIR --workers $WORKERS --seed $SEED"
+if [ -n "$EPOCHS" ]; then ARGS="$ARGS --epochs $EPOCHS"; fi
+if [ -n "$CODEC_SCORES" ]; then ARGS="$ARGS --codec-scores $CODEC_SCORES"; fi
+if [ -n "$CLINICAL_SCORES" ]; then ARGS="$ARGS --clinical-scores $CLINICAL_SCORES"; fi
+if [ -n "$MAX_TRAIN_BATCHES" ]; then ARGS="$ARGS --max-train-batches $MAX_TRAIN_BATCHES"; fi
+if [ -n "$MAX_EVAL_BATCHES" ]; then ARGS="$ARGS --max-eval-batches $MAX_EVAL_BATCHES"; fi
+
+python scripts/train.py $ARGS

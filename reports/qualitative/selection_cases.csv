@@ -1,0 +1,4 @@
+image,video_id,frame_idx,time_seconds,phase_id,phase,near_transition,top20_jaccard,selection_note
+case_278_frame00000238.jpg,case_278,238,9.52,0,Incision,0,0.0,Low overlap means the selectors prioritize different regions.
+case_840_frame00002738.jpg,case_840,2738,109.52,4,Phacoemulsification,0,0.0,Low overlap means the selectors prioritize different regions.
+case_846_frame00001712.jpg,case_846,1712,68.48,4,Phacoemulsification,0,0.0,Low overlap means the selectors prioritize different regions.

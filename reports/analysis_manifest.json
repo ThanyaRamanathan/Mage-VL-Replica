@@ -1,0 +1,28 @@
+{
+  "canonical_results": 27,
+  "selectors": [
+    "uniform",
+    "codec",
+    "clinical"
+  ],
+  "budgets": [
+    1568,
+    3136,
+    6272
+  ],
+  "seeds": [
+    17,
+    29,
+    43
+  ],
+  "outputs": [
+    "cataract101_results_long.csv",
+    "cataract101_summary.csv",
+    "paired_differences.csv",
+    "per_class_f1.csv",
+    "figures/accuracy_vs_tokens.svg",
+    "figures/macro_f1_vs_tokens.svg",
+    "figures/transition_vs_tokens.svg",
+    "figures/accuracy_latency.svg"
+  ]
+}

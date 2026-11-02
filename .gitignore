@@ -1,0 +1,32 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest-tmp/
+.venv/
+
+# Raw/derived medical video data (do not publish)
+cataract101/
+cataract101.csv
+cataract101_frames/
+cataract101_codec_scores/
+cataract101_clinical_scores_seed*/
+reports/qualitative/*.jpg
+
+# Historical nested run copies; canonical top-level result directories remain
+cataract101_runs/*/*_budget*_seed*/
+
+# Model artifacts and cluster logs
+*.pt
+*.pth
+*.ckpt
+logs/
+*.o[0-9]*
+*.e[0-9]*
+surgical_tokens.*.txt
+
+# Archives and interrupted downloads
+*.zip
+*.tar
+*.tar.gz
+*.part

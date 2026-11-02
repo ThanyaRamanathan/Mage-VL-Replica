@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#172033}.axis{stroke:#64748b;stroke-width:1}.grid{stroke:#e2e8f0;stroke-width:1}.tick{font-size:13px}.title{font-size:22px;font-weight:700}.label{font-size:15px;font-weight:600}.legend{font-size:14px}</style>
+<text x="450.0" y="32" text-anchor="middle" class="title">Transition-window accuracy versus budget</text>
+<line x1="90" y1="445.0" x2="870" y2="445.0" class="grid"/>
+<text x="78" y="450.0" text-anchor="end" class="tick">0.52</text>
+<line x1="90" y1="369.0" x2="870" y2="369.0" class="grid"/>
+<text x="78" y="374.0" text-anchor="end" class="tick">0.55</text>
+<line x1="90" y1="293.0" x2="870" y2="293.0" class="grid"/>
+<text x="78" y="298.0" text-anchor="end" class="tick">0.58</text>
+<line x1="90" y1="217.0" x2="870" y2="217.0" class="grid"/>
+<text x="78" y="222.0" text-anchor="end" class="tick">0.61</text>
+<line x1="90" y1="141.0" x2="870" y2="141.0" class="grid"/>
+<text x="78" y="146.0" text-anchor="end" class="tick">0.64</text>
+<line x1="90" y1="65.0" x2="870" y2="65.0" class="grid"/>
+<text x="78" y="70.0" text-anchor="end" class="tick">0.67</text>
+<line x1="90" y1="65" x2="90" y2="445" class="axis"/>
+<line x1="90" y1="445" x2="870" y2="445" class="axis"/>
+<text x="90.0" y="473" text-anchor="middle" class="tick">1,568</text>
+<text x="350.0" y="473" text-anchor="middle" class="tick">3,136</text>
+<text x="870.0" y="473" text-anchor="middle" class="tick">6,272</text>
+<text x="480.0" y="502" text-anchor="middle" class="label">Visual patch tokens</text>
+<text transform="translate(24 255.0) rotate(-90)" text-anchor="middle" class="label">Accuracy within ±5 s</text>
+<polyline points="90.0,243.2 350.0,144.7 870.0,167.7" fill="none" stroke="#2563eb" stroke-width="3"/>
+<line x1="90.0" y1="184.8" x2="90.0" y2="301.6" stroke="#2563eb" stroke-width="2"/>
+<line x1="84.0" y1="184.8" x2="96.0" y2="184.8" stroke="#2563eb" stroke-width="2"/>
+<line x1="84.0" y1="301.6" x2="96.0" y2="301.6" stroke="#2563eb" stroke-width="2"/>
+<circle cx="90.0" cy="243.2" r="5" fill="#2563eb"/>
+<line x1="350.0" y1="112.4" x2="350.0" y2="176.9" stroke="#2563eb" stroke-width="2"/>
+<line x1="344.0" y1="112.4" x2="356.0" y2="112.4" stroke="#2563eb" stroke-width="2"/>
+<line x1="344.0" y1="176.9" x2="356.0" y2="176.9" stroke="#2563eb" stroke-width="2"/>
+<circle cx="350.0" cy="144.7" r="5" fill="#2563eb"/>
+<line x1="870.0" y1="65.0" x2="870.0" y2="282.0" stroke="#2563eb" stroke-width="2"/>
+<line x1="864.0" y1="65.0" x2="876.0" y2="65.0" stroke="#2563eb" stroke-width="2"/>
+<line x1="864.0" y1="282.0" x2="876.0" y2="282.0" stroke="#2563eb" stroke-width="2"/>
+<circle cx="870.0" cy="167.7" r="5" fill="#2563eb"/>
+<polyline points="90.0,345.8 350.0,226.4 870.0,167.7" fill="none" stroke="#f97316" stroke-width="3"/>
+<line x1="90.0" y1="322.0" x2="90.0" y2="369.6" stroke="#f97316" stroke-width="2"/>
+<line x1="84.0" y1="322.0" x2="96.0" y2="322.0" stroke="#f97316" stroke-width="2"/>
+<line x1="84.0" y1="369.6" x2="96.0" y2="369.6" stroke="#f97316" stroke-width="2"/>
+<circle cx="90.0" cy="345.8" r="5" fill="#f97316"/>
+<line x1="350.0" y1="186.5" x2="350.0" y2="266.3" stroke="#f97316" stroke-width="2"/>
+<line x1="344.0" y1="186.5" x2="356.0" y2="186.5" stroke="#f97316" stroke-width="2"/>
+<line x1="344.0" y1="266.3" x2="356.0" y2="266.3" stroke="#f97316" stroke-width="2"/>
+<circle cx="350.0" cy="226.4" r="5" fill="#f97316"/>
+<line x1="870.0" y1="65.0" x2="870.0" y2="282.0" stroke="#f97316" stroke-width="2"/>
+<line x1="864.0" y1="65.0" x2="876.0" y2="65.0" stroke="#f97316" stroke-width="2"/>
+<line x1="864.0" y1="282.0" x2="876.0" y2="282.0" stroke="#f97316" stroke-width="2"/>
+<circle cx="870.0" cy="167.7" r="5" fill="#f97316"/>
+<polyline points="90.0,375.2 350.0,308.1 870.0,167.7" fill="none" stroke="#16a34a" stroke-width="3"/>
+<line x1="90.0" y1="328.8" x2="90.0" y2="421.5" stroke="#16a34a" stroke-width="2"/>
+<line x1="84.0" y1="328.8" x2="96.0" y2="328.8" stroke="#16a34a" stroke-width="2"/>
+<line x1="84.0" y1="421.5" x2="96.0" y2="421.5" stroke="#16a34a" stroke-width="2"/>
+<circle cx="90.0" cy="375.2" r="5" fill="#16a34a"/>
+<line x1="350.0" y1="266.3" x2="350.0" y2="350.0" stroke="#16a34a" stroke-width="2"/>
+<line x1="344.0" y1="266.3" x2="356.0" y2="266.3" stroke="#16a34a" stroke-width="2"/>
+<line x1="344.0" y1="350.0" x2="356.0" y2="350.0" stroke="#16a34a" stroke-width="2"/>
+<circle cx="350.0" cy="308.1" r="5" fill="#16a34a"/>
+<line x1="870.0" y1="65.0" x2="870.0" y2="282.0" stroke="#16a34a" stroke-width="2"/>
+<line x1="864.0" y1="65.0" x2="876.0" y2="65.0" stroke="#16a34a" stroke-width="2"/>
+<line x1="864.0" y1="282.0" x2="876.0" y2="282.0" stroke="#16a34a" stroke-width="2"/>
+<circle cx="870.0" cy="167.7" r="5" fill="#16a34a"/>
+<line x1="105" y1="79" x2="130" y2="79" stroke="#2563eb" stroke-width="3"/>
+<text x="137" y="84" class="legend">Uniform</text>
+<line x1="255" y1="79" x2="280" y2="79" stroke="#f97316" stroke-width="3"/>
+<text x="287" y="84" class="legend">Codec</text>
+<line x1="405" y1="79" x2="430" y2="79" stroke="#16a34a" stroke-width="3"/>
+<text x="437" y="84" class="legend">Clinical</text>
+</svg>

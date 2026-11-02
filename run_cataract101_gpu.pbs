@@ -1,0 +1,53 @@
+#!/bin/sh
+#PBS -N cataract101_gpu
+#PBS -l select=1:ngpus=1:ncpus=8:mem=64gb
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load cuda
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+export PYTHONPATH="$PBS_O_WORKDIR/src:${PYTHONPATH:-}"
+
+STAGE="${STAGE:-clinical-cache}"
+SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/users/ntu/$USER}"
+MANIFEST="${MANIFEST:-$SCRATCH_ROOT/cataract101.csv}"
+CODEC_SCORES="${CODEC_SCORES:-$SCRATCH_ROOT/cataract101_codec_scores}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-$PBS_O_WORKDIR/runs/cataract101}"
+WORKERS="${WORKERS:-4}"
+EPOCHS="${EPOCHS:-30}"
+CLINICAL_EPOCHS="${CLINICAL_EPOCHS:-10}"
+SEED="${SEED:-17}"
+CLINICAL_SCORES="${CLINICAL_SCORES:-$SCRATCH_ROOT/cataract101_clinical_scores_seed${SEED}}"
+CLINICAL_CHECKPOINT="${CLINICAL_CHECKPOINT:-$SCRATCH_ROOT/cataract101_clinical_seed${SEED}.pt}"
+
+case "$STAGE" in
+  clinical-cache)
+    python scripts/train_clinical_scorer.py --manifest "$MANIFEST" \
+      --output "$CLINICAL_CHECKPOINT" --num-phases 10 --epochs "$CLINICAL_EPOCHS" \
+      --batch-size 32 --workers "$WORKERS" --seed "$SEED"
+    python scripts/prepare_clinical_cache.py --manifest "$MANIFEST" \
+      --checkpoint "$CLINICAL_CHECKPOINT" --output "$CLINICAL_SCORES" --batch-size 128
+    ;;
+  train)
+    for selector in uniform codec clinical; do
+      for budget in 1568 3136 6272; do
+        run_dir="$OUTPUT_ROOT/${selector}_budget${budget}_seed${SEED}"
+        mkdir -p "$run_dir"
+        extra=""
+        if [ "$selector" = codec ]; then extra="--codec-scores $CODEC_SCORES"; fi
+        if [ "$selector" = clinical ]; then
+          extra="--clinical-scores $CLINICAL_SCORES --codec-scores $CODEC_SCORES"
+        fi
+        python scripts/train.py --config "configs/${selector}.yaml" \
+          --manifest "$MANIFEST" --selector "$selector" --budget "$budget" \
+          --output "$run_dir" --workers "$WORKERS" --epochs "$EPOCHS" --seed "$SEED" $extra
+      done
+    done
+    ;;
+  *) echo "STAGE must be clinical-cache or train" >&2; exit 2 ;;
+esac

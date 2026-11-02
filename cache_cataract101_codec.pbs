@@ -1,0 +1,22 @@
+#!/bin/sh
+#PBS -N cataract101_codec
+#PBS -l select=1:ncpus=8:mem=32gb
+#PBS -l walltime=48:00:00
+#PBS -j oe
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+export PYTHONPATH="$PBS_O_WORKDIR/src:${PYTHONPATH:-}"
+
+SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/users/ntu/$USER}"
+VIDEOS="${VIDEOS:-$SCRATCH_ROOT/cataract101/cataract-101}"
+OUTPUT="${OUTPUT:-$SCRATCH_ROOT/cataract101_codec_scores}"
+MANIFEST="${MANIFEST:-$SCRATCH_ROOT/cataract101.csv}"
+
+python scripts/prepare_codec_cache.py --videos "$VIDEOS" --output "$OUTPUT" \
+    --patch 16 --motion-weight 0.5 --manifest "$MANIFEST"
+echo "Native H.264 codec cache complete: $OUTPUT"

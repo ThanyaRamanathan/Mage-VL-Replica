@@ -1,0 +1,30 @@
+#!/bin/sh
+#PBS -N cataract101_prepare
+#PBS -l select=1:ncpus=8:mem=32gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+export PYTHONPATH="$PBS_O_WORKDIR/src:${PYTHONPATH:-}"
+
+SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/users/ntu/$USER}"
+DATA_ROOT="${DATA_ROOT:-$SCRATCH_ROOT/cataract101}"
+FRAMES="${FRAMES:-$SCRATCH_ROOT/cataract101_frames}"
+MANIFEST="${MANIFEST:-$SCRATCH_ROOT/cataract101.csv}"
+KEEP_ARCHIVE="${KEEP_ARCHIVE:-1}"
+
+KEEP_ARG=""
+if [ "$KEEP_ARCHIVE" = "1" ]; then KEEP_ARG="--keep-archive"; fi
+
+python -m surgical_tokens.cli acquire-cataract101 \
+    --root "$DATA_ROOT" --accept-noncommercial-terms $KEEP_ARG
+python -m surgical_tokens.cli convert-cataract101 \
+    --source "$DATA_ROOT/cataract-101" --frames "$FRAMES" \
+    --manifest "$MANIFEST" --sample-fps 2 --split-seed 17
+python -m surgical_tokens.cli validate-config configs/uniform.yaml --manifest "$MANIFEST"
+echo "Cataract-101 preparation complete: $MANIFEST"

@@ -1,0 +1,31 @@
+#!/bin/sh
+#PBS -N surgical_smoke
+#PBS -l select=1:ngpus=1
+#PBS -l walltime=00:30:00
+#PBS -j oe
+#PBS -o surgical_smoke.$PBS_JOBID.txt
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load cuda
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+export PYTHONPATH="$PBS_O_WORKDIR/src:${PYTHONPATH:-}"
+
+python -m pytest -q
+python -m compileall -q src scripts
+
+if [ -n "${MANIFEST:-}" ]; then
+    python -m surgical_tokens.cli validate-config configs/uniform.yaml --manifest "$MANIFEST"
+fi
+
+python - <<'PY'
+import torch
+from surgical_tokens.budget import allocate_exact
+
+assert int(allocate_exact(torch.arange(32).numpy(), 7).sum()) == 7
+print({"torch": torch.__version__, "cuda": torch.cuda.is_available(),
+       "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None})
+PY

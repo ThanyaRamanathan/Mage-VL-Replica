@@ -20,6 +20,12 @@ def main():
                         help="cache every Nth decoded source frame (25 = 1 fps for Cataract-101)")
     parser.add_argument("--manifest", type=Path,
                         help="cache the exact source frame_idx values listed for each video")
+    parser.add_argument(
+        "--temporal-aggregation", choices=("instantaneous", "max_interval", "mean_interval"),
+        default="instantaneous",
+        help=("instantaneous uses the score at the sampled source frame; interval modes "
+              "aggregate native-frame evidence since the previous model sample"),
+    )
     args = parser.parse_args()
     requested = defaultdict(set)
     if args.manifest:
@@ -34,12 +40,23 @@ def main():
         wanted = requested.get(video.stem)
         if args.manifest and not wanted:
             raise ValueError(f"manifest contains no source frames for {video.stem}")
+        interval_scores = []
         for index, frame in iter_codec(video):
+            score = patch_importance(frame, args.patch, args.motion_weight)
+            if wanted is not None and args.temporal_aggregation != "instantaneous":
+                interval_scores.append(score)
             requested_out = wanted is not None and index not in wanted
             stride_out = wanted is None and index % args.sample_step
             if requested_out or stride_out:
                 continue
-            score_rows.append(patch_importance(frame, args.patch, args.motion_weight))
+            if args.temporal_aggregation == "max_interval" and interval_scores:
+                output_score = np.max(np.stack(interval_scores), axis=0)
+            elif args.temporal_aggregation == "mean_interval" and interval_scores:
+                output_score = np.mean(np.stack(interval_scores), axis=0)
+            else:
+                output_score = score
+            score_rows.append(output_score)
+            interval_scores.clear()
             frame_indices.append(index)
             pts_seconds.append(frame.pts_seconds)
             keyframes.append(frame.keyframe)
@@ -53,6 +70,8 @@ def main():
             pts_seconds=np.asarray(pts_seconds, dtype=np.float64),
             keyframes=np.asarray(keyframes, dtype=bool),
             residual_signal="motion_compensated_l1_proxy",
+            temporal_aggregation=args.temporal_aggregation,
+            motion_weight=args.motion_weight,
         )
         print(f"cached {video.name}: {scores.shape}", flush=True)
 

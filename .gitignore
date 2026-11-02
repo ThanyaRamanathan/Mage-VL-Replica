@@ -11,6 +11,7 @@ cataract101.csv
 cataract101_frames/
 cataract101_codec_scores/
 cataract101_clinical_scores_seed*/
+cataract101_smoke_runs/
 reports/qualitative/*.jpg
 
 # Historical nested run copies; canonical top-level result directories remain

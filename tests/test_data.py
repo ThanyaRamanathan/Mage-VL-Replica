@@ -3,7 +3,12 @@ import csv
 import numpy as np
 from PIL import Image
 
-from surgical_tokens.data import SurgicalClipDataset, _resize_score_grid, _window_starts
+from surgical_tokens.data import (
+    SurgicalClipDataset,
+    _normalize_score_grid,
+    _resize_score_grid,
+    _window_starts,
+)
 
 
 def test_window_starts_covers_video_tail():
@@ -18,6 +23,15 @@ def test_score_grid_resampling_preserves_time_axis():
     assert resized.shape == (2, 2, 3)
     np.testing.assert_allclose(resized[0], 0)
     np.testing.assert_allclose(resized[1], 1)
+
+
+def test_per_frame_rank_normalization_removes_offsets():
+    scores = np.asarray([[[0.0, 2.0], [1.0, 3.0]],
+                         [[100.0, 102.0], [101.0, 103.0]]])
+    normalized = _normalize_score_grid(scores, "per_frame_rank")
+    np.testing.assert_allclose(normalized[0], normalized[1])
+    assert normalized.min() == 0.0
+    assert normalized.max() == 1.0
 
 
 def test_dataset_builds_windows_and_uses_center_label(tmp_path):

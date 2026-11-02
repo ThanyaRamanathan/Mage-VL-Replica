@@ -1,0 +1,32 @@
+#!/bin/sh
+#PBS -N export_predictions
+#PBS -l select=1:ngpus=1:ncpus=8:mem=64gb
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -q normal
+
+set -eu
+cd "$PBS_O_WORKDIR"
+module load cuda
+module load miniforge3
+module load gcc/11.2.0
+conda activate "${CONDA_ENV:-surgical}"
+export PYTHONPATH="$PBS_O_WORKDIR/src:${PYTHONPATH:-}"
+
+SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/users/ntu/$USER}"
+SELECTOR="${SELECTOR:?set SELECTOR to uniform, codec, or clinical}"
+BUDGET="${BUDGET:?set BUDGET}"
+SEED="${SEED:?set SEED}"
+RUN_ROOT="${RUN_ROOT:-$PBS_O_WORKDIR/cataract101_runs}"
+RUN_DIR="$RUN_ROOT/${SELECTOR}_budget${BUDGET}_seed${SEED}"
+MANIFEST="${MANIFEST:-$SCRATCH_ROOT/cataract101.csv}"
+CODEC_SCORES="${CODEC_SCORES:-$SCRATCH_ROOT/cataract101_codec_scores}"
+CLINICAL_SCORES="${CLINICAL_SCORES:-$SCRATCH_ROOT/cataract101_clinical_scores_seed${SEED}}"
+WORKERS="${WORKERS:-4}"
+
+ARGS="--checkpoint $RUN_DIR/best.pt --manifest $MANIFEST --output $RUN_DIR --workers $WORKERS"
+if [ "$SELECTOR" = codec ]; then ARGS="$ARGS --codec-scores $CODEC_SCORES"; fi
+if [ "$SELECTOR" = clinical ]; then
+    ARGS="$ARGS --codec-scores $CODEC_SCORES --clinical-scores $CLINICAL_SCORES"
+fi
+python scripts/export_predictions.py $ARGS

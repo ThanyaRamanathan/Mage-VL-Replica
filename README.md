@@ -6,10 +6,12 @@ isolates Mage-VL's anchor/predicted-frame token-selection idea and tests it on
 [Cataract-101](https://ftp.itec.aau.at/datasets/ovid/cat-101/) surgical phase
 recognition.
 
-The central result is negative but useful: at matched patch-token budgets,
-uniform temporal sampling was stronger and substantially cheaper than both the
-codec-guided and learned clinical selectors. The learned clinical signal did
-not beat the codec signal.
+The v0.2 result is negative but useful: with a frozen ViT that encodes each
+frame fragment independently, uniform temporal sampling was stronger than both
+the codec-guided and learned clinical selectors. The learned clinical signal
+did not beat the codec signal. This is an implementation-specific result, not a
+general verdict on codec-native tokenization; see the
+[method audit](docs/METHOD_AUDIT.md).
 
 ![Macro-F1 versus token budget](reports/figures/macro_f1_vs_tokens.svg)
 
@@ -35,9 +37,12 @@ matched uniform accuracy but not macro-F1 or transition accuracy. At 6,272
 tokens every method selects the full input, and their predictions match exactly
 within each seed—an implementation sanity check.
 
-The reported latency is synchronized **model-forward time per sample**. It
-excludes dataset loading, video decode, cache construction, and selector-score
-generation; it is not end-to-end streaming latency.
+The reported v0.2 latency is synchronized **model-forward time per sample**, but
+is dominated by one encoder call per represented frame. Uniform uses 8/16/32
+calls while sparse arms spread tokens across nearly every frame. It excludes
+data loading, decode, cache construction, and score generation, and must not be
+treated as an architecture-independent speed comparison. The current code
+batches equal-length frame fragments to permit a corrected remeasurement.
 
 See [the full report](reports/FINAL_REPORT.md) for paired comparisons,
 per-phase errors, qualitative selector maps, and limitations.
@@ -58,6 +63,8 @@ This is a mechanism study, not a reproduction of Mage-VL. It uses original
 H.264/AVC streams rather than HEVC, an off-the-shelf frozen image encoder and a
 lightweight temporal classifier rather than Mage-ViT/VLM pretraining, and a
 decoded residual proxy rather than bit-exact transform coefficients.
+The frozen ViT also does not attend jointly over sparse tokens from different
+frames; only mean-pooled frame vectors enter the temporal transformer.
 
 ## Repository map
 
@@ -68,6 +75,9 @@ scripts/train.py             matched-budget training and evaluation
 scripts/analyze_results.py   27-run validation, statistics, CSVs, SVG figures
 scripts/qualitative_selectors.py
                               selector-disagreement triptychs
+scripts/export_predictions.py per-clip prediction and timing export
+scripts/bootstrap_procedures.py
+                              paired held-out-procedure bootstrap
 cataract101_runs/            canonical result JSON and checkpoints
 reports/                     final report, tables, figures, qualitative cases
 tests/                       budget, codec, dataset, and selector tests

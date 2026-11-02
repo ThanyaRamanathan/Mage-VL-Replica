@@ -52,6 +52,18 @@ def _resize_score_grid(scores: np.ndarray, grid_h: int, grid_w: int) -> np.ndarr
     return F.interpolate(tensor, (grid_h, grid_w), mode="area")[:, 0].numpy()
 
 
+def _normalize_score_grid(scores: np.ndarray, mode: str) -> np.ndarray:
+    if mode == "none":
+        return scores
+    if mode != "per_frame_rank":
+        raise ValueError(f"unknown score normalization: {mode}")
+    flat = scores.reshape(scores.shape[0], -1)
+    order = np.argsort(flat, axis=1, kind="stable")
+    ranks = np.argsort(order, axis=1, kind="stable").astype(np.float32)
+    ranks /= max(1, flat.shape[1] - 1)
+    return ranks.reshape(scores.shape)
+
+
 class SurgicalClipDataset(Dataset):
     """Sliding temporal clips labeled by the center-frame surgical phase."""
 
@@ -60,7 +72,8 @@ class SurgicalClipDataset(Dataset):
                  resolution: tuple[int, int] = (224, 224), patch_size: int = 16,
                  codec_scores: str | Path | None = None,
                  clinical_scores: str | Path | None = None,
-                 anchor_fraction: float = 0.5):
+                 anchor_fraction: float = 0.5,
+                 score_normalization: str = "none"):
         groups = _read_rows(Path(manifest), split)
         self.records = []
         for video_id, rows in sorted(groups.items()):
@@ -72,6 +85,7 @@ class SurgicalClipDataset(Dataset):
         self.codec_scores = Path(codec_scores) if codec_scores else None
         self.clinical_scores = Path(clinical_scores) if clinical_scores else None
         self.anchor_fraction = anchor_fraction
+        self.score_normalization = score_normalization
         capacity = clip_frames * (resolution[0] // patch_size) * (resolution[1] // patch_size)
         if budget > capacity:
             raise ValueError(f"budget {budget} exceeds clip capacity {capacity}")
@@ -107,6 +121,7 @@ class SurgicalClipDataset(Dataset):
         with np.load(path) as cache:
             indices = self._cache_indices(cache, record.rows)
             scores = _resize_score_grid(cache["scores"][indices], grid_h, grid_w)
+            scores = _normalize_score_grid(scores, self.score_normalization)
             mandatory = None
             if require_anchors:
                 anchor_path = (anchor_directory or directory) / f"{record.video_id}.npz"

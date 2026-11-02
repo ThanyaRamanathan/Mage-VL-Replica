@@ -7,6 +7,7 @@
   exploratory small-sample intervals.
 - `per_class_f1.csv`: phase-level F1 summaries.
 - `analysis_manifest.json`: validated factorial-design manifest.
+- `anchor_audit.json` / `.csv`: actual dense-anchor counts for every window.
 - `figures/`: dependency-free SVG result figures.
 - `qualitative/selection_cases.csv`: reproducible selection metadata.
 

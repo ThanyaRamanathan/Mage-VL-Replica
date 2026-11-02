@@ -21,6 +21,8 @@ OUTPUT_ROOT="${OUTPUT_ROOT:-$PBS_O_WORKDIR/runs/cataract101}"
 WORKERS="${WORKERS:-4}"
 EPOCHS="${EPOCHS:-30}"
 CLINICAL_EPOCHS="${CLINICAL_EPOCHS:-10}"
+CLINICAL_TRAINING_MODE="${CLINICAL_TRAINING_MODE:-frame}"
+CLINICAL_BATCH_SIZE="${CLINICAL_BATCH_SIZE:-32}"
 SEED="${SEED:-17}"
 CLINICAL_SCORES="${CLINICAL_SCORES:-$SCRATCH_ROOT/cataract101_clinical_scores_seed${SEED}}"
 CLINICAL_CHECKPOINT="${CLINICAL_CHECKPOINT:-$SCRATCH_ROOT/cataract101_clinical_seed${SEED}.pt}"
@@ -29,7 +31,8 @@ case "$STAGE" in
   clinical-cache)
     python scripts/train_clinical_scorer.py --manifest "$MANIFEST" \
       --output "$CLINICAL_CHECKPOINT" --num-phases 10 --epochs "$CLINICAL_EPOCHS" \
-      --batch-size 32 --workers "$WORKERS" --seed "$SEED"
+      --batch-size "$CLINICAL_BATCH_SIZE" --workers "$WORKERS" --seed "$SEED" \
+      --training-mode "$CLINICAL_TRAINING_MODE"
     python scripts/prepare_clinical_cache.py --manifest "$MANIFEST" \
       --checkpoint "$CLINICAL_CHECKPOINT" --output "$CLINICAL_SCORES" --batch-size 128
     ;;

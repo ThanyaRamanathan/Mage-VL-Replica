@@ -87,17 +87,24 @@ At 6,272 tokens, all three selectors produced identical accuracy, macro-F1,
 transition accuracy, and per-class metrics within each seed. This is expected:
 the budget retains the full 32-frame patch grid, leaving no selector decision.
 
-## Efficiency result
+## Efficiency result and implementation artifact
 
 ![Accuracy–latency trade-off](figures/accuracy_latency.svg)
 
 At 1,568 tokens, uniform sampling used 34.43 ms/sample of synchronized model
 forward time, versus 133.67 ms for codec and 134.81 ms for clinical selection.
 At 3,136 tokens, uniform required 68.29 ms versus roughly 135 ms for the sparse
-arms. Equal patch count is therefore not equal compute in this architecture:
-uniform sampling concentrates complete grids in fewer temporal positions,
-whereas sparse selectors distribute patches across up to 32 positions and pay
-more temporal/padding overhead.
+arms. This gap is primarily an implementation artifact. The evaluated
+`SparseTemporalClassifier` called the frozen ViT separately for every
+represented frame. Uniform therefore made approximately 8, 16, and 32 encoder
+calls at the three budgets, while sparse selection distributed patches across
+nearly all 32 frames at both sparse budgets. The near-linear uniform timing
+(about 4.3 ms per frame) supports this explanation.
+
+The repository now groups equal-length frame fragments into batched encoder
+calls without changing v0.2 attention semantics. Existing timing values have
+not been relabeled: corrected latency requires re-evaluating the checkpoints.
+A truly joint sparse encoder is a separate architectural correction.
 
 This timing excludes dataloader work, video decode, cache construction, and
 importance-score generation. It must not be described as end-to-end codec
@@ -137,19 +144,35 @@ signals can prioritize entirely different evidence. The aggregate result shows
 that this learned spatial prior was not sufficiently phase-discriminative under
 the present supervision.
 
-## Interpretation
+## Interpretation and architecture mismatch
 
 Mage-VL's result depends on a jointly designed and pretrained visual encoder,
-codec tokenization strategy, and large-scale video training. Isolating the
-selector and attaching it to a frozen off-the-shelf image encoder does not
-preserve that advantage automatically. Surgical phases also evolve slowly and
-depend on workflow context; uniformly spaced complete frames may retain global
-anatomy and temporal coverage better than motion-focused patches.
+codec tokenization strategy, and large-scale video training. In v0.2, selected
+patches from each frame pass independently through a frozen densely pretrained
+ViT and are mean-pooled to one frame vector. Only those frame vectors enter a
+two-layer temporal transformer. The spatial encoder never attends across
+frames; spatial positions come from pretrained 2D absolute embeddings, and a
+learned frame embedding is added only after spatial encoding. Sparse fragments
+were therefore presented to an encoder that was neither structured nor trained
+for joint sparse spatio-temporal tokens. This is the strongest confound and
+means the negative result cannot be generalized to Mage-ViT.
 
-The learned scorer's supervision is weakly aligned with the target. Phase and
-transition labels tell the model *when* workflow changes, but not which spatial
-patches causally identify the phase. Tool masks, anatomy segmentation, or
-counterfactual token-utility targets would be more direct supervision.
+The codec cache introduces a second mismatch. Native importance is computed
+against the immediately preceding decoded frame at roughly 25 fps, while model
+inputs are sampled at 2 fps. The selected saliency therefore describes about
+40 ms of change rather than redundancy over the roughly 0.5-second model
+interval. A new cache option aggregates codec evidence over each sampled
+interval, but it requires new codec-arm runs.
+
+The learned scorer's supervision is weakly aligned with the target. Its
+phase-attention softmax is invariant to a constant offset within each frame,
+yet downstream selection ranks raw logits across all frames. Weak sparsity
+regularization may not calibrate those offsets. Codec scores are normalized
+per frame, so the arms are also asymmetric. The code now exposes symmetric
+per-frame rank normalization as an ablation; a stronger fix is clip-level
+training that explicitly calibrates patch utility across time. Phase and
+transition labels alone tell the model *when* workflow changes, not which
+patches causally identify the phase.
 
 ## Claim boundary and limitations
 
@@ -160,8 +183,18 @@ counterfactual token-utility targets would be more direct supervision.
 - The encoder/classifier and pretraining recipe differ materially from
   Mage-ViT/Mage-VL.
 - Statistical inference is weak with three seeds and 15 held-out procedures.
+- Seeds vary initialization and data order on one frozen split; their intervals
+  measure training noise, not test-procedure sampling uncertainty. Future
+  evaluation exports per-clip procedure IDs for paired procedure bootstrap.
 - Forward latency lacks warmup-controlled median/p95, peak memory, and
   decode/selection/packing breakdowns specified in the original protocol.
+- The measured latency is confounded by the per-frame encoder loop and should
+  not be interpreted as the intrinsic cost of sparse attention.
+- Anchor counts were audited after the run: every one of 12,377 windows used
+  exactly 4/8/16 dense anchors at budgets 1,568/3,136/6,272, with no frame-0
+  fallback. Anchor scarcity was therefore not a confound in this dataset.
+- `anchor_fraction=0.5`, `motion_weight=0.5`, and score normalization were not
+  selected by a validation-only ablation.
 - Recognition-error case mining would require rerunning evaluation while saving
   per-clip identifiers, labels, predictions, and selector masks. The included
   images analyze selector disagreement only.
@@ -170,13 +203,14 @@ counterfactual token-utility targets would be more direct supervision.
 
 ## Conclusion
 
-For this Cataract-101 mechanism study, uniform temporal sampling provides the
-best accuracy–efficiency trade-off. Codec-guided sparsity does not outperform
-uniform sampling, and the learned clinical importance signal does not improve
-on codec saliency. The dense-endpoint equivalence and consistent sparse-budget
-ordering across seeds make the negative result informative: codec-native
-selection is not a drop-in replacement for uniform surgical-video sampling
-without compatible representation learning and better spatial supervision.
+For the evaluated v0.2 architecture—a frozen dense ViT, independent per-frame
+fragment encoding, instantaneous source-frame codec saliency, and uncalibrated
+clinical scores—uniform temporal sampling achieved the best recognition
+metrics. The result shows that codec-native selection is not a drop-in
+replacement under those conditions. It does not show that a jointly trained
+Mage-ViT-style sparse spatio-temporal encoder would lose to uniform sampling.
+The dense endpoint confirms determinism only; it provides no evidence about
+selection quality.
 
 ## Reproducibility artifacts
 
@@ -185,6 +219,7 @@ without compatible representation learning and better spatial supervision.
 - [`paired_differences.csv`](paired_differences.csv): paired seed-wise deltas.
 - [`per_class_f1.csv`](per_class_f1.csv): per-phase F1 aggregates.
 - [`analysis_manifest.json`](analysis_manifest.json): validated design grid.
+- [`anchor_audit.json`](anchor_audit.json): measured dense anchors per window.
 - [`selection_cases.csv`](qualitative/selection_cases.csv): qualitative-case metadata.
 
 ## References

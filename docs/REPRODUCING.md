@@ -89,3 +89,39 @@ python scripts/qualitative_selectors.py
 The first command validates the exact 3×3×3 design before writing the report
 CSVs and SVG figures. The second command requires local frames and selector
 caches; generated medical-frame JPEGs are ignored by Git.
+
+## 7. Export procedure-level predictions and corrected forward timing
+
+The original result JSONs do not contain clip identifiers. Re-evaluate each
+saved checkpoint with the grouped frame encoder to write `predictions.jsonl`
+and `reevaluation.json` without retraining:
+
+```bash
+for seed in 17 29 43; do
+    for selector in uniform codec clinical; do
+        for budget in 1568 3136 6272; do
+            qsub -v "SELECTOR=${selector},BUDGET=${budget},SEED=${seed},CONDA_ENV=surgical,SCRATCH_ROOT=/your/scratch/path,RUN_ROOT=$PWD/cataract101_runs" export_predictions.pbs
+        done
+    done
+done
+```
+
+After all 27 exports finish:
+
+```bash
+python scripts/bootstrap_procedures.py --runs cataract101_runs \
+    --output reports/procedure_bootstrap.csv
+```
+
+This bootstrap resamples the 15 held-out procedures while keeping selector
+comparisons paired and averages each replicate across the three trained seeds.
+It measures procedure variation conditional on the trained models.
+
+## 8. Corrected v0.3 gate
+
+Build an interval-aligned codec cache using
+`TEMPORAL_AGGREGATION=max_interval`, train the clinical scorer with
+`CLINICAL_TRAINING_MODE=clip,CLINICAL_BATCH_SIZE=2`, and use the
+`configs/v03/` files. First run only seed 17 at 1,568 and 3,136 tokens. Continue
+to the full grid only after verifying exact budgets, memory use, encoder-call
+counts, and validation behavior. See [`ABLATIONS.md`](ABLATIONS.md).

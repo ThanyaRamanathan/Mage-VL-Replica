@@ -1,0 +1,19 @@
+seed: 17
+selector: uniform
+data:
+  manifest: data/cataract101.csv
+  resolution: [224, 224]
+  clip_frames: 32
+  clip_stride: 8
+selection:
+  score_normalization: none
+model:
+  backbone: vit_small_patch16_224.augreg_in21k_ft_in1k
+  architecture: joint_sparse
+  num_classes: 10
+  frozen: true
+train:
+  epochs: 30
+  batch_size: 2
+  lr: 0.0003
+budgets: [1568, 3136, 6272]

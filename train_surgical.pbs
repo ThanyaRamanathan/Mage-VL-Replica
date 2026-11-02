@@ -27,6 +27,9 @@ CODEC_SCORES="${CODEC_SCORES:-}"
 CLINICAL_SCORES="${CLINICAL_SCORES:-}"
 MAX_TRAIN_BATCHES="${MAX_TRAIN_BATCHES:-}"
 MAX_EVAL_BATCHES="${MAX_EVAL_BATCHES:-}"
+ANCHOR_FRACTION="${ANCHOR_FRACTION:-}"
+SCORE_NORMALIZATION="${SCORE_NORMALIZATION:-}"
+SKIP_TEST="${SKIP_TEST:-0}"
 
 export PYTHONPATH="${PBS_O_WORKDIR}/src:${PYTHONPATH:-}"
 python -m surgical_tokens.cli validate-config "$CONFIG" --manifest "$MANIFEST"
@@ -40,5 +43,8 @@ if [ -n "$CODEC_SCORES" ]; then ARGS="$ARGS --codec-scores $CODEC_SCORES"; fi
 if [ -n "$CLINICAL_SCORES" ]; then ARGS="$ARGS --clinical-scores $CLINICAL_SCORES"; fi
 if [ -n "$MAX_TRAIN_BATCHES" ]; then ARGS="$ARGS --max-train-batches $MAX_TRAIN_BATCHES"; fi
 if [ -n "$MAX_EVAL_BATCHES" ]; then ARGS="$ARGS --max-eval-batches $MAX_EVAL_BATCHES"; fi
+if [ -n "$ANCHOR_FRACTION" ]; then ARGS="$ARGS --anchor-fraction $ANCHOR_FRACTION"; fi
+if [ -n "$SCORE_NORMALIZATION" ]; then ARGS="$ARGS --score-normalization $SCORE_NORMALIZATION"; fi
+if [ "$SKIP_TEST" = "1" ]; then ARGS="$ARGS --skip-test"; fi
 
 python scripts/train.py $ARGS

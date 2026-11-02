@@ -14,3 +14,5 @@ train:
   batch_size: 2
   lr: 0.0003
 budgets: [1568, 3136, 6272]
+selection:
+  score_normalization: none

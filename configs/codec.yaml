@@ -11,6 +11,8 @@ codec:
   anchor_fraction: 0.5
   source_codec: native_h264_avc
   residual: motion_compensated_l1_proxy
+selection:
+  score_normalization: none
 model:
   backbone: vit_small_patch16_224.augreg_in21k_ft_in1k
   num_classes: 10

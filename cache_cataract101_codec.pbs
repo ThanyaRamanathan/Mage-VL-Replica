@@ -16,7 +16,10 @@ SCRATCH_ROOT="${SCRATCH_ROOT:-/scratch/users/ntu/$USER}"
 VIDEOS="${VIDEOS:-$SCRATCH_ROOT/cataract101/cataract-101}"
 OUTPUT="${OUTPUT:-$SCRATCH_ROOT/cataract101_codec_scores}"
 MANIFEST="${MANIFEST:-$SCRATCH_ROOT/cataract101.csv}"
+MOTION_WEIGHT="${MOTION_WEIGHT:-0.5}"
+TEMPORAL_AGGREGATION="${TEMPORAL_AGGREGATION:-instantaneous}"
 
 python scripts/prepare_codec_cache.py --videos "$VIDEOS" --output "$OUTPUT" \
-    --patch 16 --motion-weight 0.5 --manifest "$MANIFEST"
+    --patch 16 --motion-weight "$MOTION_WEIGHT" --manifest "$MANIFEST" \
+    --temporal-aggregation "$TEMPORAL_AGGREGATION"
 echo "Native H.264 codec cache complete: $OUTPUT"
